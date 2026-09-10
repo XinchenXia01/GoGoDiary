@@ -1,0 +1,110 @@
+classDiagram
+    %% ===== 领域常量（eventTypes.js） =====
+    class Species {
+        +string kind
+        +string label
+        +string emoji
+    }
+    class BaseType {
+        +string type
+        +string label
+        +string emoji
+        +string color
+        +string unit
+        +string[] fields
+    }
+    class PresetEntry {
+        +string type
+        +string group
+        +string label
+        +string emoji
+    }
+
+    %% ===== 数据模型 =====
+    class CustomType {
+        +string id
+        +string label
+        +string emoji
+        +string color
+        +string unit
+        +string[] fields
+        +number order
+    }
+    class Pet {
+        +string id
+        +string name
+        +string emoji
+        +string kind
+        +string[] hiddenTypes
+        +CustomType[] customTypes
+        +number createdAt
+    }
+    class Event {
+        +string id
+        +string petId
+        +string type
+        +number ts
+        +string note
+        +number amount
+        +string unit
+        +string poopForm
+        +string poopColor
+        +number durationMin
+        +number startTs
+        +number endTs
+        +string label
+        +string[] photoIds
+        +number createdAt
+        +number updatedAt
+    }
+    class ActiveTimer {
+        +string petId
+        +string type
+        +number startTs
+    }
+
+    %% ===== 服务/工具（函数集合） =====
+    class EventTypesService {
+        +getEventType(type)
+        +hasField(type, field)
+        +getSpecies(kind)
+        +speciesEmoji(kind)
+        +getPresetEventTypes(kind)
+        +resolveEventMeta(type, pet)
+        +resolveEventDisplay(event, pet)
+        +getVisibleEventTypes(pet)
+        +isTimerType(type)
+        +getStatsMetrics(kind)
+        +describeEvent(event)
+    }
+    class StorageService {
+        +readPets() writePets()
+        +addPet() updatePet() deletePet()
+        +readEvents() writeEvents()
+        +addEvent() updateEvent() deleteEvent()
+        +readSettings() writeSettings()
+        +readActiveTimer() startTimer() clearTimer()
+        +exportData() importData() clearAll()
+    }
+    class FormatService {
+        +formatDuration(minutes)
+        +formatClockRange(startTs, endTs)
+        +formatGapSince(lastTs, now)
+    }
+
+    %% ===== 关系 =====
+    Species "1" --> "*" PresetEntry : 预设
+    BaseType "1" --> "*" PresetEntry : 被覆盖 label/emoji
+    Pet "1" --> "*" CustomType : 拥有
+    Pet "*" --> "1" Species : kind 指向
+    Pet "1" --> "*" Event : 记录
+    Event "*" --> "1" BaseType : type 引用
+    Event "*" --> "0..1" CustomType : 或自定义 id
+    ActiveTimer "*" --> "1" Pet : petId
+    ActiveTimer "*" --> "1" BaseType : type
+
+    EventTypesService ..> Species
+    EventTypesService ..> BaseType
+    EventTypesService ..> PresetEntry
+    StorageService ..> EventTypesService : 兜底/单位
+    FormatService ..> StorageService : 时长展示

@@ -1,0 +1,138 @@
+%% ============================================================
+%% 宠物流水账 · 物种化事件增量 · 关键调用流程
+%% 参与模块：App / QuickLog / EventEditor / Timeline / EventManager
+%%           SettingsView / StatsView / TimerBar
+%%           eventTypes.js / storage.js / format.js
+%% ============================================================
+
+%% ---------- (a) 新建宠物选物种 → 速记区按物种过滤 ----------
+sequenceDiagram
+    autonumber
+    participant U as 用户
+    participant SV as SettingsView
+    participant App as App
+    participant ST as storage.js (localStorage)
+    participant ET as eventTypes.js
+    participant QL as QuickLog
+
+    U->>SV: 输入名字 + 选物种「猫🐈」+ 点添加
+    SV->>ET: speciesEmoji('cat')
+    ET-->>SV: '🐈'（作为默认头像）
+    SV->>App: onAddPet({ name, emoji:'🐈', kind:'cat' })
+    App->>ST: addPet({ name, emoji, kind })
+    ST->>ST: sanitizePet → kind 白名单校验 + hiddenTypes:[] + customTypes:[]
+    ST-->>App: pet
+    App->>ST: writeSettings({ ...settings, activePetId: pet.id })
+    App->>ET: getVisibleEventTypes(pet)
+    ET->>ET: getPresetEventTypes('cat') 减去 hiddenTypes 追加 customTypes
+    ET-->>App: [walk(外出),meal,treat,water,poop(便便),pee,play(逗猫棒),cuddle,bath,nailTrim,med,weight]
+    App->>QL: <QuickLog types={visible} />
+    QL-->>U: 渲染「猫」贴合的事件按钮（无遛狗/拉屎）
+
+%% ---------- (b) 计时：开始 → 持久化 → 重开恢复 → 结束生成记录 ----------
+sequenceDiagram
+    autonumber
+    participant U as 用户
+    participant QL as QuickLog
+    participant App as App
+    participant ST as storage.js
+    participant TB as TimerBar
+    participant TL as Timeline
+
+    U->>QL: 点「遛狗 ⏱」（isTimerType('walk') === true）
+    QL->>App: onStartTimer('walk')
+    App->>ST: startTimer(petId, 'walk', Date.now())
+    ST->>ST: rawSet('petlog.v1.activeTimer', {petId,type,startTs})
+    ST-->>App: session
+    App->>App: setActiveTimer(session)
+    App->>TB: <TimerBar session pet />
+    TB-->>U: 顶部横幅「进行中 · 遛狗 · 已用 00:03」+「结束」按钮
+
+    Note over App,ST: 用户切走 / 关闭浏览器
+    Note over App,ST: 重新打开 App
+    App->>ST: readActiveTimer()  ← 初始化
+    ST-->>App: {petId,type,startTs}
+    App->>App: 校验 petId 仍存在 → setActiveTimer(session)
+    App->>TB: 重新渲染
+    TB-->>U: 恢复计时显示（时长按 startTs 实时计算）
+
+    U->>TB: 点「结束」
+    TB->>App: onStopTimer()
+    App->>ST: clearTimer()
+    App->>ST: addEvent({ petId, type, ts:startTs, startTs, endTs:now,<br/>durationMin: round((now-startTs)/60000, 1) })
+    ST->>ST: sanitizeEvent → durationMin 落 number
+    ST-->>App: event
+    App->>App: setEvents(...) + setActiveTimer(null)
+    App->>TL: 事件列表刷新
+    TL-->>U: 时间轴出现「遛狗 · 12 分钟」（formatDuration 展示）
+
+%% ---------- (c) 隐藏 / 自定义事件 ----------
+sequenceDiagram
+    autonumber
+    participant U as 用户
+    participant EM as EventManager
+    participant App as App
+    participant ST as storage.js
+    participant ET as eventTypes.js
+    participant QL as QuickLog
+
+    rect rgb(245,245,255)
+    Note over U,QL: 隐藏（按宠物）
+    U->>EM: 关闭「洗澡」开关
+    EM->>App: onUpdatePet(petId, { hiddenTypes:[...prev,'bath'] })
+    App->>ST: updatePet(petId, patch)
+    ST->>ST: sanitizePet 清洗 hiddenTypes
+    ST-->>App: pets
+    App->>ET: getVisibleEventTypes(pet)
+    ET-->>App: 去掉 bath 的可见集
+    App->>QL: 重新渲染
+    QL-->>U: 速记区不再出现「洗澡」
+    end
+
+    rect rgb(245,255,245)
+    Note over U,QL: 自定义（仅 other 物种）
+    U->>EM: ＋新建（选 emoji⭐ / 名字 / 颜色 / 是否需要时长）
+    EM->>App: onUpdatePet(petId, { customTypes:[...prev, {id:'custom_x',label,emoji,color,unit,fields,order} ] })
+    App->>ST: updatePet(petId, patch)
+    ST->>ST: sanitizeCustomType（id 不与基础 type 冲突）
+    ST-->>App: pets
+    App->>ET: getVisibleEventTypes(pet)
+    ET-->>App: 预设 + 自定义（追加在末尾）
+    App->>QL: 重新渲染
+    QL-->>U: 速记区出现自定义按钮
+    U->>QL: 点击自定义按钮
+    QL->>App: onLog('custom_x')
+    App->>ST: addEvent({ ...,type:'custom_x', label:'散步' })  ← 写入 label 快照
+    end
+
+    rect rgb(255,250,240)
+    Note over U,QL: 删除自定义 → 保留历史 + 渲染兜底
+    U->>EM: 删除自定义事件「散步」
+    EM->>App: onUpdatePet(petId, { customTypes: 去掉该项 })
+    App->>ST: updatePet(petId, patch)
+    Note over App,ET: 历史事件 type='custom_x' 仍在 events 中
+    App->>ET: resolveEventDisplay(oldEvent, pet)
+    ET-->>App: customTypes 找不到 → 用 event.label('散步') 显示原名
+    end
+
+%% ---------- (d) 统计页按物种动态计算（含外出总时长） ----------
+sequenceDiagram
+    autonumber
+    participant U as 用户
+    participant App as App
+    participant ET as eventTypes.js
+    participant SV as StatsView
+    participant FMT as format.js
+
+    U->>App: 切到「统计」Tab
+    App->>ET: getStatsMetrics(activePet.kind)
+    ET->>ET: 按 STATS_PRIORITY ∩ 该物种可见集 取指标
+    ET-->>App: { bars:[walk,meal], intervals:[walk,meal], durationTypes:[walk,flight], hasPoop:false }
+    App->>SV: <StatsView events={petEvents} pet={activePet} />
+    SV->>SV: 按 bars 聚合最近 7 天计数（动态，不硬编码狗指标）
+    SV->>ET: resolveEventDisplay(e, pet)
+    ET-->>SV: 物种化 label/emoji（猫 walk →「外出」）
+    SV->>SV: 外出总时长 = Σ durationMin（walk+flight，近 7 天）
+    SV->>FMT: formatDuration(totalMin)
+    FMT-->>SV: '2 小时 30 分钟'
+    SV-->>U: 物种化柱状图 + 间隔卡 + 本周外出总时长（无对应事件的卡片自动隐藏）
