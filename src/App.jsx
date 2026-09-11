@@ -378,7 +378,7 @@ export default function App() {
       {/* 顶部栏 */}
       <header className="pt-safe sticky top-0 z-30 bg-cream/95 px-4 pb-2 backdrop-blur">
         <h1 className="mb-2 text-lg font-bold text-stone-800">
-          🐾 宠物流水账
+          🐾 GoGoDiary
           {activePet ? <span className="ml-2 text-sm font-normal text-stone-500">{activePet.name}</span> : null}
         </h1>
         <PetSwitcher

@@ -385,7 +385,7 @@ export default function SettingsView({
         </div>
       </section>
 
-      <p className="px-1 text-center text-xs text-stone-400">宠物流水账 v1.1 · 纯本地 · 无联网</p>
+      <p className="px-1 text-center text-xs text-stone-400">GoGoDiary v1.1 · 纯本地 · 无联网</p>
     </div>
   );
 }

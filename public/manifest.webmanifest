@@ -1,7 +1,7 @@
 {
-  "name": "宠物流水账",
-  "short_name": "流水账",
-  "description": "一击记录宠物日常：遛狗、吃饭、零食、拉屎，全部存在手机本地。",
+  "name": "GoGoDiary",
+  "short_name": "GoGoDiary",
+  "description": "GoGoDiary —— 一键记录宠物日常：遛狗、吃饭、零食、拉屎，全部存在手机本地。",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

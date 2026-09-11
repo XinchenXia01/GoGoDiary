@@ -15,7 +15,7 @@ const PETS = [{ id: 'p1', name: '旺财', emoji: '🐶', kind: 'dog', createdAt:
 
 test('渲染：全新用户（空数据）不白屏，显示引导卡片', async () => {
   const { html } = await renderAppWith({});
-  assert.ok(html.includes('宠物流水账'), '应渲染标题');
+  assert.ok(html.includes('GoGoDiary'), '应渲染标题');
   assert.ok(html.includes('先添加一只宠物吧'), '空数据应显示引导卡片');
   assert.ok(html.includes('去添加宠物'));
 });
@@ -26,7 +26,7 @@ test('渲染：localStorage 里全是脏数据时不崩溃', async () => {
     [KEYS.events]: '[null, {"ts":"坏"}, {"ts":123}]',
     [KEYS.settings]: 'null',
   });
-  assert.ok(html.includes('宠物流水账'));
+  assert.ok(html.includes('GoGoDiary'));
   assert.doesNotThrow(() => html.length);
 });
 
@@ -61,7 +61,7 @@ test('渲染：未知事件类型与损坏字段不导致崩溃', async () => {
     ]),
     [KEYS.settings]: JSON.stringify({ activePetId: 'p1', timelineOrder: 'desc' }),
   });
-  assert.ok(html.includes('宠物流水账'));
+  assert.ok(html.includes('GoGoDiary'));
   assert.doesNotThrow(() => html.length);
 });
 

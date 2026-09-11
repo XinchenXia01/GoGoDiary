@@ -279,6 +279,6 @@ test('[计时] 会话指向已删宠物：存储层保留原值，App 渲染层�
     [KEYS.settings]: JSON.stringify({ activePetId: 'p1', timelineOrder: 'desc' }),
     [KEYS.activeTimer]: JSON.stringify({ petId: 'ghost', type: 'walk', startTs: 1000 }),
   });
-  assert.ok(html.includes('宠物流水账'), '页面应正常渲染');
+  assert.ok(html.includes('GoGoDiary'), '页面应正常渲染');
   assert.ok(!html.includes('进行中'), '失效会话不应出现计时横幅');
 });

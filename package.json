@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "宠物流水账日记 PWA —— 纯本地存储、离线可用、一击速记",
+  "description": "GoGoDiary —— 纯本地存储、离线可用、一键速记的宠物日记 PWA",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

@@ -1,6 +1,6 @@
 /* eslint-disable no-restricted-globals */
 /**
- * 宠物流水账 Service Worker
+ * GoGoDiary Service Worker
  * 目标：装到主屏幕后可完全离线打开，更新时自动激活新版本。
  * 策略：
  *  - 导航请求：网络优先，失败回退 index.html（离线可用）

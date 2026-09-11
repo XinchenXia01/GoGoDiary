@@ -505,3 +505,62 @@ walk→狗遛狗 / 猫外出 / 兔·鼠放风 / 鸟遛鸟；poop→狗拉屎 / �
 
 - **BUG-1【P1】** 零记录「距上次…」巨大天数 —— 复核确认**已修复**（`StatsView.jsx` 改用 `formatGapSince(lastTs, now)`，`format.js:171` 对 `null/undefined/非有限数` 返回「暂无记录」）。
 - **BUG-2【P3】** 覆盖导入未带 settings 残留旧 `activePetId` —— 见第六节回归修复确认。
+
+## 十、改名回归（宠物流水账 → GoGoDiary）
+
+> 本轮由 QA 独立验证，**不采信工程师自报**：全部结论均来自亲手执行的构建 / grep / 测试 / 渲染。
+
+### 10.1 构建复现：通过
+
+- 先 `rm -rf dist` 清空产物，再 `npm run build` → **成功**，`✓ 45 modules transformed`，`built in 1.14s`。
+- 产物齐全：`dist/index.html`、`dist/manifest.webmanifest`、`dist/sw.js`、`dist/assets/index-*.{js,css}`、`dist/icon-192.png`、`dist/icon-512.png`。
+
+### 10.2 产物核验：通过（旧名零残留）
+
+| 产物 | 字段 | 实际值 | 结论 |
+|---|---|---|---|
+| `dist/index.html` L10 | `<title>` | `GoGoDiary` | ✓ |
+| `dist/index.html` L17 | `apple-mobile-web-app-title` | `GoGoDiary` | ✓ |
+| `dist/manifest.webmanifest` L2 | `name` | `GoGoDiary` | ✓ |
+| `dist/manifest.webmanifest` L3 | `short_name` | `GoGoDiary` | ✓ |
+| `dist/sw.js` L3 | 注释 | `GoGoDiary Service Worker` | ✓ |
+
+- 对 `dist/` 全量 grep `宠物流水账` → **0 命中**；`dist/assets/index-*.js` 打包产物内含 `GoGoDiary`（App 页头 + 设置页脚已进包）。
+
+### 10.3 源码零残留：通过
+
+- 对 `src/`、`index.html`、`public/`、`tests/`（活跃用例）grep `宠物流水账` → **0 命中**。
+- 全项目仅 **2 处**预期命中，均属归档/历史，**非交付物**：
+  - `tests/TEST-REPORT.md` L1 / L32（本报告早期第 1 轮内容，历史记录）；
+  - `docs/PRD-species-events.md`、`docs/DESIGN-species-events.md`、`docs/sequence-diagram.mermaid`（设计/PRD 归档文档）。
+- 新名落点核对（均正确）：`index.html` L10/L17、`public/manifest.webmanifest` L2/3/4、`public/sw.js` L3、`src/App.jsx` L381、`src/components/SettingsView.jsx` L388、`package.json` L6、4 个测试断言文件。
+
+### 10.4 改动范围审查（防误伤）：通过 —— 纯字符串替换
+
+- `git diff --stat HEAD`：**10 files changed, 15 insertions(+), 15 deletions(-)**。
+- 逐行审阅 `git diff HEAD`：改动**全部为字符串字面量替换**，涉及 `index.html` / `public/manifest.webmanifest` / `public/sw.js`（注释）/ `src/App.jsx`（页头文案）/ `src/components/SettingsView.jsx`（页脚文案）/ `package.json`（description）/ 4 个测试断言文件。
+- **未触碰**任何逻辑分支、样式类名、数据结构、函数签名、import 依赖、构建配置。无越界改动。
+
+### 10.5 全量测试：通过
+
+- `npm test` → **`# tests 262` / `# pass 262` / `# fail 0`**（0 cancelled / 0 skipped）。
+- 与工程师自报一致；总数 ≥ 262 达标。
+
+### 10.6 渲染实证：通过
+
+- 复用 `tests/helpers/render.js`（esbuild + react-dom/server）真实渲染：
+  - `App`（有宠物）：输出含 `🐾 GoGoDiary`，**不含** `宠物流水账`；
+  - `App`（空数据）：输出含 `GoGoDiary`，**不含**旧名；
+  - `SettingsView`：页脚含 `GoGoDiary v1.1`，**不含**旧名。
+- 该验证以临时测试文件执行，跑完 **3 passed / 0 failed** 后已删除，未进入交付；`git status` 确认工作区改动仍为上述 10 个文件。
+
+### 10.7 路由判定
+
+**NoOne —— 全部通过。**
+
+- 构建成功、产物旧名零残留、源码零残留（仅归档文档按预期保留旧名）、改动范围纯净（纯字符串）、全量 262/0、渲染实证通过。
+- QA 本轮**未修改任何源码**，临时验证文件已清理。
+
+### 已知历史问题（非本次改名引入）
+
+- 见第九节所列 BUG-1 / BUG-2 / OBS-3，状态不变，本次改名未触及。

@@ -71,7 +71,7 @@ test('[渲染] 脏数据 + 未知类型事件：不白屏，且时间轴用 labe
     ]),
     [KEYS.settings]: SETTINGS('p1'),
   });
-  assert.ok(html.includes('宠物流水账'), '页面应正常渲染');
+  assert.ok(html.includes('GoGoDiary'), '页面应正常渲染');
   assert.ok(html.includes('神秘旧事件'), '未知类型应使用 label 快照兜底');
   assert.ok(html.includes('遛狗'), '正常事件按物种渲染');
 });

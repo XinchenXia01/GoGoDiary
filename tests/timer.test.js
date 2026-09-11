@@ -78,7 +78,7 @@ test('App 清理失效会话：activeTimer 指向已不存在的宠物时不渲�
     [KEYS.settings]: JSON.stringify(SETTINGS),
     [KEYS.activeTimer]: JSON.stringify({ petId: 'ghost', type: 'walk', startTs: 123 }),
   });
-  assert.ok(html.includes('宠物流水账'), '页面仍应正常渲染');
+  assert.ok(html.includes('GoGoDiary'), '页面仍应正常渲染');
   assert.ok(!html.includes('进行中'), '失效会话（宠物已删）不应显示计时横幅');
 });
 
